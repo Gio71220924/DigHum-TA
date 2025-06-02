@@ -108,8 +108,8 @@ def koreksi_kemiringan(path_citra):
 if __name__ == "__main__":
     # Ganti dengan path ke citra-citra input kalian
     daftar_citra_input = [
-        "dataset\coba5.jpg",
-        "dataset\coba6.png",
+        "dataset\coba5.jpg"
+        # "dataset\coba6.png",
     ]
 
     for i, path_input in enumerate(daftar_citra_input):
@@ -120,9 +120,9 @@ if __name__ == "__main__":
             if citra_terkoreksi is not None:
                 cv2.imshow(f"Citra Terkoreksi {i+1} (Sudut: {sudut:.2f}, Arah: {arah})", citra_terkoreksi)
                 # Simpan hasil (opsional)
-                nama_file_output = f"hasil_koreksi_{i+1}.png"
-                cv2.imwrite(nama_file_output, citra_terkoreksi)
-                print(f"Hasil koreksi disimpan sebagai: {nama_file_output}")
+                # nama_file_output = f"hasil_koreksi_{i+1}.png"
+                # cv2.imwrite(nama_file_output, citra_terkoreksi)
+                # print(f"Hasil koreksi disimpan sebagai: {nama_file_output}")
             else:
                 print(f"Tidak dapat melakukan koreksi untuk citra {path_input}")
             print("-" * 30)
