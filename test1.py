@@ -1,7 +1,28 @@
 import cv2
 import numpy as np
 import math
+import os
+import pytesseract
 # Versi Nuel
+
+# --- Konfigurasi Tesseract (Tambahkan bagian ini) ---
+tesseract_path_default = r"C:\Program Files\Tesseract-OCR\tesseract.exe" # Sesuaikan dengan path Anda
+try:
+    pytesseract.pytesseract.tesseract_cmd = os.environ.get('TESSERACT_CMD', tesseract_path_default)
+    pytesseract.get_tesseract_version()
+    print(f"✅ Tesseract OCR ditemukan di: {pytesseract.pytesseract.tesseract_cmd}")
+    print(f"   Versi Tesseract: {pytesseract.get_tesseract_version()}")
+except Exception as e:
+    print(f"⚠️ Peringatan Tesseract: {e}")
+    # Penanganan error path Tesseract bisa ditambahkan di sini seperti skrip Anda sebelumnya jika diperlukan
+    # Untuk contoh ini, kita asumsikan path default benar atau environment variable TESSERACT_CMD sudah di-set.
+    # Jika tidak, pytesseract akan gagal saat dipanggil.
+    if not os.path.exists(pytesseract.pytesseract.tesseract_cmd):
+        print(f"❌ Error: Tesseract OCR tidak ditemukan di path '{pytesseract.pytesseract.tesseract_cmd}'.")
+        print("Pastikan Tesseract OCR terinstal dan path ke tesseract.exe sudah benar, atau set environment variable TESSERACT_CMD.")
+        # Anda mungkin ingin keluar dari program di sini jika Tesseract adalah komponen krusial
+        # exit()
+
 def koreksi_kemiringan(path_citra):
     """
     Membaca citra teks, mendeteksi sudut kemiringan menggunakan Hough Transform,
@@ -108,11 +129,20 @@ def koreksi_kemiringan(path_citra):
 if __name__ == "__main__":
     # Ganti dengan path ke citra-citra input kalian
     daftar_citra_input = [
-        "dataset\coba5.jpg"
-        # "dataset\coba6.png",
+        "dataset\coba7.png"
     ]
 
+     # <<< GANTI BAHASA OCR DI SINI JIKA PERLU >>>
+    ocr_language = 'eng+ind' # Contoh: Inggris dan Indonesia
+
+    # <<< SET OPSI THRESHOLDING SEBELUM OCR (OPSIONAL TAPI DIREKOMENDASIKAN) >>>
+    apply_ocr_preprocessing_thresholding = True
+    # Pilih INV jika teks lebih gelap dari latar belakang pada gambar grayscale setelah koreksi
+    ocr_threshold_type = cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU
+    
+
     for i, path_input in enumerate(daftar_citra_input):
+        print(f"\n--- Memproses Citra {i+1}: {path_input} ---")
         citra_asli, citra_terkoreksi, sudut, arah = koreksi_kemiringan(path_input)
 
         if citra_asli is not None:
@@ -123,6 +153,42 @@ if __name__ == "__main__":
                 # nama_file_output = f"hasil_koreksi_{i+1}.png"
                 # cv2.imwrite(nama_file_output, citra_terkoreksi)
                 # print(f"Hasil koreksi disimpan sebagai: {nama_file_output}")
+                 # --- Langkah OCR dengan Tesseract ---
+                print("\n  Melakukan OCR pada citra terkoreksi...")
+                img_for_ocr = citra_terkoreksi.copy()
+
+                if apply_ocr_preprocessing_thresholding:
+                    print("    Menerapkan thresholding tambahan sebelum OCR...")
+                    if len(img_for_ocr.shape) == 3: # Jika berwarna
+                        ocr_gray = cv2.cvtColor(img_for_ocr, cv2.COLOR_BGR2GRAY)
+                    else: # Jika sudah grayscale
+                        ocr_gray = img_for_ocr
+                    
+                    # Terapkan thresholding
+                    _, ocr_thresholded = cv2.threshold(ocr_gray, 0, 255, ocr_threshold_type)
+                    img_for_ocr = ocr_thresholded # Gambar untuk OCR sekarang adalah hasil threshold
+                    cv2.imshow(f"Thresholded untuk OCR {i+1}", img_for_ocr)
+
+
+                try:
+                    # Pytesseract dapat menerima citra BGR, RGB, atau Grayscale (NumPy array).
+                    # Jika sudah di-threshold menjadi biner/grayscale, tidak perlu konversi BGR2RGB.
+                    custom_config = r'--oem 3 --psm 6' # Contoh konfigurasi, sesuaikan jika perlu
+                    dikenali_teks = pytesseract.image_to_string(img_for_ocr, lang=ocr_language, config=custom_config)
+                    
+                    print(f"\n  Teks yang Dikenali dari Citra {i+1} ({ocr_language}):")
+                    print("  ------------------------------------")
+                    print(dikenali_teks if dikenali_teks.strip() else "  (Tidak ada teks yang dikenali atau teks kosong)")
+                    print("  ------------------------------------")
+
+                except pytesseract.TesseractNotFoundError:
+                    print("❌ Error Tesseract: Path ke tesseract.exe tidak ditemukan atau salah.")
+                    print("   Pastikan Tesseract OCR terinstal dan path sudah dikonfigurasi dengan benar.")
+                except Exception as e_ocr:
+                    print(f"❌ Error saat melakukan OCR pada citra {i+1}: {e_ocr}")
+                    if "Failed loading language" in str(e_ocr):
+                        print(f"   Pastikan language pack untuk '{ocr_language}' sudah terinstal di Tesseract.")
+
             else:
                 print(f"Tidak dapat melakukan koreksi untuk citra {path_input}")
             print("-" * 30)
