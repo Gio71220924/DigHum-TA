@@ -3,7 +3,7 @@ import numpy as np
 from scipy.ndimage import interpolation as inter
 import pytesseract
 import os # Untuk mempermudah penanganan path
-
+# Versi Gio
 # --- Konfigurasi Tesseract ---
 # (Bagian ini tetap sama)
 tesseract_path_default = r"C:\Program Files\Tesseract-OCR\tesseract.exe" # Contoh path
