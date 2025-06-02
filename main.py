@@ -97,7 +97,7 @@ def correct_fine_skew(image, delta=0.5, limit=15):
 # --- Fungsi Utama dengan Path Gambar Langsung ---
 if __name__ == "__main__":
     # <<< GANTI PATH GAMBAR DI SINI >>>
-    image_file_path = r"D:\Kuliah\SEMESTER 6\DigHum\Projek Akhir\test\coba5.png"
+    image_file_path = r"dataset\coba6.png"
 
     # <<< GANTI BAHASA OCR DI SINI JIKA PERLU >>>
     ocr_language = 'eng'
