@@ -176,7 +176,7 @@ if __name__ == "__main__":
                     custom_config = r'--oem 3 --psm 6' # Contoh konfigurasi, sesuaikan jika perlu
                     dikenali_teks = pytesseract.image_to_string(img_for_ocr, lang=ocr_language, config=custom_config)
                     
-                    print(f"\n  Teks yang Dikenali dari Citra {i+1} ({ocr_language}):")
+                    print(f"\n  Teks yang Dikenali dari Citra {i+1}:")
                     print("  ------------------------------------")
                     print(dikenali_teks if dikenali_teks.strip() else "  (Tidak ada teks yang dikenali atau teks kosong)")
                     print("  ------------------------------------")
