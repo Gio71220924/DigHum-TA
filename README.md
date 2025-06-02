@@ -37,3 +37,8 @@ pip install pytesseract
 ```
 ## Cara menginstall Tesseract OCR
 - [Download disini](https://github.com/tesseract-ocr/tesseract/releases/download/5.5.0/tesseract-ocr-w64-setup-5.5.0.20241111.exe).
+- Klik dua kali file .exe untuk menjalankan instalasi.
+- Pilih opsi "Additional language data" saat instalasi, centang bahasa yang kamu butuhkan (misalnya ind untuk Indonesia).
+- Install di direktori default, biasanya: ```C:\Program Files\Tesseract-OCR\```
+- Klik "OK", lalu tunggu proses instalasi.
+  
