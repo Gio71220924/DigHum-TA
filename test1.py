@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 import math
-
+# Versi Nuel
 def koreksi_kemiringan(path_citra):
     """
     Membaca citra teks, mendeteksi sudut kemiringan menggunakan Hough Transform,
