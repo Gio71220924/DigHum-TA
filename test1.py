@@ -127,12 +127,8 @@ if __name__ == "__main__":
         "dataset\coba7.png"
     ]
 
-     # <<< GANTI BAHASA OCR DI SINI JIKA PERLU >>>
-    ocr_language = 'eng+ind' # Contoh: Inggris dan Indonesia
-
-    # <<< SET OPSI THRESHOLDING SEBELUM OCR (OPSIONAL TAPI DIREKOMENDASIKAN) >>>
+    ocr_language = 'eng+ind' # Bahasa Inggris dan Indonesia
     apply_ocr_preprocessing_thresholding = True
-    # Pilih INV jika teks lebih gelap dari latar belakang pada gambar grayscale setelah koreksi
     ocr_threshold_type = cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU
     
 
@@ -166,9 +162,7 @@ if __name__ == "__main__":
 
 
                 try:
-                    # Pytesseract dapat menerima citra BGR, RGB, atau Grayscale (NumPy array).
-                    # Jika sudah di-threshold menjadi biner/grayscale, tidak perlu konversi BGR2RGB.
-                    custom_config = r'--oem 3 --psm 6' # Contoh konfigurasi, sesuaikan jika perlu
+                    custom_config = r'--oem 3 --psm 6' 
                     dikenali_teks = pytesseract.image_to_string(img_for_ocr, lang=ocr_language, config=custom_config)
                     
                     print(f"\n  Teks yang Dikenali dari Citra {i+1}:")
