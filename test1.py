@@ -5,7 +5,7 @@ import os
 import pytesseract
 # Versi Nuel
 
-# --- Konfigurasi Tesseract (Tambahkan bagian ini) ---
+# --- Konfigurasi Tesseract
 tesseract_path_default = r"C:\Program Files\Tesseract-OCR\tesseract.exe" # Sesuaikan dengan path Anda
 try:
     pytesseract.pytesseract.tesseract_cmd = os.environ.get('TESSERACT_CMD', tesseract_path_default)
@@ -14,14 +14,9 @@ try:
     print(f"   Versi Tesseract: {pytesseract.get_tesseract_version()}")
 except Exception as e:
     print(f"⚠️ Peringatan Tesseract: {e}")
-    # Penanganan error path Tesseract bisa ditambahkan di sini seperti skrip Anda sebelumnya jika diperlukan
-    # Untuk contoh ini, kita asumsikan path default benar atau environment variable TESSERACT_CMD sudah di-set.
-    # Jika tidak, pytesseract akan gagal saat dipanggil.
     if not os.path.exists(pytesseract.pytesseract.tesseract_cmd):
         print(f"❌ Error: Tesseract OCR tidak ditemukan di path '{pytesseract.pytesseract.tesseract_cmd}'.")
         print("Pastikan Tesseract OCR terinstal dan path ke tesseract.exe sudah benar, atau set environment variable TESSERACT_CMD.")
-        # Anda mungkin ingin keluar dari program di sini jika Tesseract adalah komponen krusial
-        # exit()
 
 def koreksi_kemiringan(path_citra):
     """
