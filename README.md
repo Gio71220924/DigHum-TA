@@ -1,5 +1,6 @@
 # Deteksi Kemiringan dengan Hough Transform 
-Projek Akhir Mata Kuliah Digital Humanities
+Projek Akhir Mata Kuliah Digital Humanities (https://dighum-ta.streamlit.app/)
+
 
 Daftar Anggota kelompok:
   1. 71220856	Vincen Imanuel
@@ -24,16 +25,20 @@ Daftar Anggota kelompok:
 
 ## Library yang digunakan
 ```
-OpenCV 
+opencv-python-headless	 
 Numpy
 Tesseract OCR
+streamlit	
+Pillow
 ```
 ## Instalasi
 
 ```
-pip install opencv-python
+pip install opencv-python-headless
 pip install numpy
-pip install pytesseract 
+pip install pytesseract
+pip install streamlit
+pip install Pillow
 ```
 ## Cara menginstall Tesseract OCR
 - [Download disini](https://github.com/tesseract-ocr/tesseract/releases/download/5.5.0/tesseract-ocr-w64-setup-5.5.0.20241111.exe).
