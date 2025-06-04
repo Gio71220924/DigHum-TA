@@ -33,9 +33,11 @@ def koreksi_kemiringan(citra):
     sudut_kemiringan = np.median(filtered_angles)
     arah = "Tegak Lurus / Kecil"
     if sudut_kemiringan > 0.5:
-        arah = "Berlawanan Jarum Jam (Rotasi ke Kanan)"
+        arah = "Berlawanan Arah Jarum Jam (Rotasi ke kiri)"
     elif sudut_kemiringan < -0.5:
-        arah = "Searah Jarum Jam (Rotasi ke Kiri)"
+        arah = "Searah Jarum Jam (Rotasi ke kanan)"
+    else:
+        arah = "Tegak Lurus / Kemiringan Sangat Kecil"
 
     (h, w) = citra.shape[:2]
     center = (w // 2, h // 2)

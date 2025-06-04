@@ -28,10 +28,10 @@ if uploaded_file is not None:
     col1, col2 = st.columns(2)  # <-- ini perbaikan dari st.container(2)
 
     with col1:
-        st.image(asli, caption="Citra Asli", channels="BGR", use_container_width=True)
+        st.image(asli, caption=f"Citra Asli || Sudut Kemiringan:{sudut:.2f}°", channels="BGR", use_container_width=True)
     with col2:
         if terkoreksi is not None:
-            st.image(terkoreksi, caption=f"Citra Terkoreksi ({sudut:.2f}° - {arah})", channels="BGR", use_container_width=True)
+            st.image(terkoreksi, caption=f"Citra Terkoreksi ||  Arah Koreksi: {arah})", channels="BGR", use_container_width=True)
         else:
             st.warning("❌ Tidak ada kemiringan yang perlu dikoreksi.")
 
