@@ -1,12 +1,12 @@
 import cv2
 import numpy as np
-from scipy.ndimage import interpolation as inter
+import math
+import os
 import pytesseract
-import os # Untuk mempermudah penanganan path
-# Versi Gio
-# --- Konfigurasi Tesseract ---
-# (Bagian ini tetap sama)
-tesseract_path_default = r"C:\Program Files\Tesseract-OCR\tesseract.exe" # Contoh path
+# Versi Nuel
+
+# --- Konfigurasi Tesseract
+tesseract_path_default = r"C:\Program Files\Tesseract-OCR\tesseract.exe" # Sesuaikan dengan path Anda
 try:
     pytesseract.pytesseract.tesseract_cmd = os.environ.get('TESSERACT_CMD', tesseract_path_default)
     pytesseract.get_tesseract_version()
@@ -14,219 +14,173 @@ try:
     print(f"   Versi Tesseract: {pytesseract.get_tesseract_version()}")
 except Exception as e:
     print(f"⚠️ Peringatan Tesseract: {e}")
-    user_tesseract_path = input(f"Tesseract tidak otomatis terdeteksi atau ada masalah. Masukkan path ke tesseract.exe (atau biarkan kosong untuk mencoba '{tesseract_path_default}'): ").strip()
-    if user_tesseract_path:
-        pytesseract.pytesseract.tesseract_cmd = user_tesseract_path
-    elif not os.path.exists(tesseract_path_default):
-        print(f"❌ Error: Tesseract OCR tidak ditemukan di path default ('{tesseract_path_default}') dan tidak ada path yang dimasukkan.")
-        print("Silakan install Tesseract OCR dan/atau set path yang benar dalam script atau sebagai environment variable TESSERACT_CMD.")
-        exit()
+    if not os.path.exists(pytesseract.pytesseract.tesseract_cmd):
+        print(f"❌ Error: Tesseract OCR tidak ditemukan di path '{pytesseract.pytesseract.tesseract_cmd}'.")
+        print("Pastikan Tesseract OCR terinstal dan path ke tesseract.exe sudah benar, atau set environment variable TESSERACT_CMD.")
+
+def koreksi_kemiringan(path_citra):
+    """
+    Membaca citra teks, mendeteksi sudut kemiringan menggunakan Hough Transform,
+    mengidentifikasi arah kemiringan, dan melakukan rotasi untuk meluruskan teks.
+
+    Args:
+        path_citra (str): Path menuju file citra input.
+
+    Returns:
+        tuple: Berisi (citra_asli, citra_hasil_rotasi, sudut_kemiringan, arah_kemiringan)
+               atau None jika tidak ada garis yang terdeteksi.
+    """
+    # 1. Baca citra
+    citra = cv2.imread(path_citra)
+    if citra is None:
+        print(f"Error: Tidak dapat membaca citra dari {path_citra}")
+        return None, None, None, None
+
+    citra_asli = citra.copy()
+
+    # 2. Pra-pemrosesan
+    # Konversi ke grayscale
+    gray = cv2.cvtColor(citra, cv2.COLOR_BGR2GRAY)
+    # Invert gambar jika teks lebih terang dari background (opsional, tergantung citra)
+    # gray = cv2.bitwise_not(gray)
+    # Deteksi tepi menggunakan Canny
+    edges = cv2.Canny(gray, 50, 150, apertureSize=3)
+
+    # 3. Terapkan Hough Line Transform
+    # Parameter HoughLinesP:
+    # - edges: output dari detektor tepi.
+    # - 1: resolusi rho dalam piksel.
+    # - np.pi / 180: resolusi theta dalam radian.
+    # - threshold: jumlah minimum irisan untuk mendeteksi garis.
+    # - minLineLength: panjang minimum garis dalam piksel.
+    # - maxLineGap: celah maksimum antara segmen garis yang akan dianggap sebagai satu garis.
+    lines = cv2.HoughLinesP(edges, 1, np.pi / 180, threshold=80, minLineLength=50, maxLineGap=10)
+
+    if lines is None:
+        print(f"Tidak ada garis yang terdeteksi di {path_citra}. Coba sesuaikan parameter Hough.")
+        return citra_asli, None, 0, "Tidak terdeteksi"
+
+    angles = []
+    for line in lines:
+        x1, y1, x2, y2 = line[0]
+        # Hitung sudut garis
+        # Perhatikan: atan2 mengembalikan sudut dalam radian, antara -pi dan pi.
+        # Sudut dihitung relatif terhadap sumbu x positif.
+        angle = math.atan2(y2 - y1, x2 - x1) * 180.0 / np.pi
+        angles.append(angle)
+
+    # 4. Tentukan sudut kemiringan dominan
+    # Kita bisa menggunakan median atau modus dari sudut-sudut yang terdeteksi.
+    # Median lebih robust terhadap outlier.
+    # Filter sudut yang masuk akal untuk kemiringan teks (misalnya antara -45 dan 45 derajat)
+    # karena Hough Transform bisa mendeteksi garis vertikal juga.
+    filtered_angles = [angle for angle in angles if -45 < angle < 45 and angle != 0]
+
+    if not filtered_angles:
+        print(f"Tidak ada sudut kemiringan teks yang signifikan terdeteksi di {path_citra}.")
+        return citra_asli, citra_asli, 0, "Tidak signifikan" # Kembalikan citra asli jika tidak ada kemiringan
+
+    sudut_kemiringan = np.median(filtered_angles)
+
+    # 5. Identifikasi arah kemiringan
+    arah_kemiringan = "Tidak ada"
+    if sudut_kemiringan > 0.5: # Tambahkan sedikit toleransi
+        arah_kemiringan = "Berlawanan Arah Jarum Jam (Rotasi ke Kanan)"
+    elif sudut_kemiringan < -0.5: # Tambahkan sedikit toleransi
+        arah_kemiringan = "Searah Jarum Jam (Rotasi ke Kiri)"
     else:
-         pytesseract.pytesseract.tesseract_cmd = tesseract_path_default
-
-    try:
-        pytesseract.get_tesseract_version()
-        print(f"✅ Tesseract OCR berhasil dikonfigurasi ke: {pytesseract.pytesseract.tesseract_cmd}")
-        print(f"   Versi Tesseract: {pytesseract.get_tesseract_version()}")
-    except Exception as e_inner:
-        print(f"❌ Error: Gagal menggunakan path Tesseract yang dimasukkan atau default: {e_inner}")
-        print("Pastikan Tesseract OCR terinstal dan path ke tesseract.exe sudah benar.")
-        exit()
+        arah_kemiringan = "Tegak Lurus / Kemiringan Sangat Kecil"
 
 
-# --- Fungsi Deteksi Rotasi Besar (OSD) ---
-# (Bagian ini tetap sama)
-def detect_major_rotation_osd(image):
-    try:
-        osd_data = pytesseract.image_to_osd(image, output_type=pytesseract.Output.DICT, lang='eng+ind')
-        rotation = osd_data['rotate']
-        direction_map = {
-            0: "✅ Orientasi Sudah Benar (0°)",
-            90: "🔄 Orientasi Perlu Diputar 90° Searah Jarum Jam untuk Lurus",
-            180: "🔄 Orientasi Perlu Diputar 180° untuk Lurus",
-            270: "🔄 Orientasi Perlu Diputar 90° Berlawanan Arah Jarum Jam untuk Lurus"
-        }
-        direction_message = direction_map.get(rotation, f"❓ Orientasi Tidak Diketahui (Rotasi OSD: {rotation}°)")
-        return rotation, direction_message
-    except Exception as e:
-        print(f"⚠️ Gagal melakukan OSD: {e}. Mengasumsikan rotasi 0 derajat.")
-        return 0, "⚠️ OSD Gagal, Asumsi 0°"
+    print(f"Citra: {path_citra}")
+    print(f"Sudut Kemiringan Terdeteksi: {sudut_kemiringan:.2f} derajat")
+    print(f"Arah Kemiringan: {arah_kemiringan}")
 
-# --- Fungsi Rotasi Gambar ---
-# (Bagian ini tetap sama)
-def rotate_image(image, angle_degrees, border_color=(255,255,255)):
-    if image is None:
-        return None
-    (h, w) = image.shape[:2]
+    # 6. Rotasi citra untuk meluruskan
+    (h, w) = citra.shape[:2]
     center = (w // 2, h // 2)
-    M = cv2.getRotationMatrix2D(center, angle_degrees, 1.0)
-    rotated = cv2.warpAffine(image, M, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_CONSTANT, borderValue=border_color)
-    return rotated
 
-# --- Fungsi Deteksi dan Koreksi Kemiringan Halus (Proyeksi Profil) ---
-# (Bagian ini tetap sama)
-def correct_fine_skew(image, delta=0.5, limit=15):
-    if image is None:
-        print("Error: Gambar input untuk correct_fine_skew adalah None.")
-        return None, 0, "Tidak Diketahui"
-    if len(image.shape) == 2:
-        gray = image
-    else:
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
-    def find_score(arr, angle):
-        data = inter.rotate(arr, angle, reshape=False, order=0, cval=0)
-        hist = np.sum(data, axis=1)
-        score = np.sum((hist[1:] - hist[:-1]) ** 2)
-        return score
-    angles = np.arange(-limit, limit + delta, delta)
-    scores = [find_score(thresh, angle) for angle in angles]
-    best_angle = angles[np.argmax(scores)]
-    direction = "Tidak Diketahui"
-    angle_threshold = 0.05
-    if best_angle > angle_threshold:
-        direction = "Berlawanan Arah Jarum Jam (Perlu Rotasi CCW)"
-    elif best_angle < -angle_threshold:
-        direction = "Searah Jarum Jam (Perlu Rotasi CW)"
-    else:
-        direction = "Tegak Lurus (atau kemiringan sangat kecil)"
-    corrected_img = rotate_image(image, best_angle)
-    return corrected_img, best_angle, direction
+    # Matriks rotasi
+    # Perhatikan: OpenCV melakukan rotasi berlawanan arah jarum jam untuk sudut positif.
+    # Jadi, jika sudut_kemiringan adalah X, kita perlu merotasi sebesar -X.
+    M = cv2.getRotationMatrix2D(center, sudut_kemiringan, 1.0) # Koreksi sudut rotasi
+    
+    # Hitung dimensi baru gambar setelah rotasi agar seluruh gambar terlihat
+    cos = np.abs(M[0, 0])
+    sin = np.abs(M[0, 1])
+    
+    new_w = int((h * sin) + (w * cos))
+    new_h = int((h * cos) + (w * sin))
+    
+    # Sesuaikan matriks rotasi untuk memperhitungkan translasi
+    M[0, 2] += (new_w / 2) - center[0]
+    M[1, 2] += (new_h / 2) - center[1]
+    
+    citra_hasil_rotasi = cv2.warpAffine(citra, M, (new_w, new_h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
 
 
-# --- Fungsi Utama dengan Path Gambar Langsung ---
+    return citra_asli, citra_hasil_rotasi, sudut_kemiringan, arah_kemiringan
+
 if __name__ == "__main__":
-    # <<< GANTI PATH GAMBAR DI SINI >>>
-    image_file_path = r"dataset\coba6.png"
+    # Ganti dengan path ke citra-citra input kalian
+    daftar_citra_input = [
+        "dataset\coba7.png"
+    ]
 
-    # <<< GANTI BAHASA OCR DI SINI JIKA PERLU >>>
-    ocr_language = 'eng'
+    ocr_language = 'eng+ind' # Bahasa Inggris dan Indonesia
+    apply_ocr_preprocessing_thresholding = True
+    ocr_threshold_type = cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU
+    
 
-    # <<< SET OPSI THRESHOLDING SEBELUM OCR >>>
-    apply_ocr_preprocessing_thresholding = True # Set ke True untuk menerapkan, False untuk tidak
-    # Jika True, jenis thresholding yang akan digunakan (contoh: Otsu)
-    # Anda bisa juga memilih cv2.THRESH_BINARY (+ nilai manual) atau cv2.adaptiveThresholdMeanC/GaussianC
-    ocr_threshold_type = cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU # Teks hitam di latar putih (THRESH_BINARY) atau Teks putih di latar hitam (THRESH_BINARY_INV)
-                                                                 # Pilih INV jika teks Anda lebih gelap dari latar belakang pada gambar grayscale
+    for i, path_input in enumerate(daftar_citra_input):
+        print(f"\n--- Memproses Citra {i+1}: {path_input} ---")
+        citra_asli, citra_terkoreksi, sudut, arah = koreksi_kemiringan(path_input)
 
-    print(f"Memproses gambar: {image_file_path}")
-    print(f"Bahasa OCR yang digunakan: {ocr_language}")
-    print(f"Thresholding tambahan sebelum OCR: {'Aktif' if apply_ocr_preprocessing_thresholding else 'Tidak Aktif'}")
+        if citra_asli is not None:
+            cv2.imshow(f"Citra Asli {i+1} (Sudut Kemiringan: {sudut:.2f})", citra_asli)
+            if citra_terkoreksi is not None:
+                cv2.imshow(f"Citra Terkoreksi {i+1} (Sudut: -{sudut:.2f}, Arah: {arah})", citra_terkoreksi)
+                # Simpan hasil (opsional)
+                # nama_file_output = f"hasil_koreksi_{i+1}.png"
+                # cv2.imwrite(nama_file_output, citra_terkoreksi)
+                # print(f"Hasil koreksi disimpan sebagai: {nama_file_output}")
+                 # --- Langkah OCR dengan Tesseract ---
+                print("\n  Melakukan OCR pada citra terkoreksi...")
+                img_for_ocr = citra_terkoreksi.copy()
 
-    if not os.path.exists(image_file_path):
-        print(f"❌ Error: File tidak ditemukan di '{image_file_path}'. Mohon periksa path.")
-        exit()
-
-    original_img = cv2.imread(image_file_path)
-
-    if original_img is None:
-        print(f"❌ Gagal membaca gambar: {image_file_path}")
-        exit()
-
-    # 1. Deteksi dan Koreksi Orientasi Besar (OSD)
-    print("  Tahap 1: Deteksi Orientasi Besar (OSD)...")
-    osd_correction_angle, osd_direction_msg = detect_major_rotation_osd(original_img)
-    print(f"    Sudut Rotasi OSD yang dibutuhkan: {osd_correction_angle}° ({osd_direction_msg})")
-
-    img_after_osd = rotate_image(original_img, osd_correction_angle)
-    if img_after_osd is None:
-        print(f"❌ Gagal melakukan rotasi OSD pada {image_file_path}. Menggunakan gambar asli untuk tahap selanjutnya.")
-        img_after_osd = original_img.copy()
-
-    # 2. Deteksi dan Koreksi Kemiringan Halus (Proyeksi Profil)
-    print("  Tahap 2: Deteksi Kemiringan Halus (Proyeksi Profil)...")
-    img_final_corrected, fine_skew_angle, fine_skew_direction_msg = correct_fine_skew(img_after_osd, delta=0.2, limit=15)
-
-    if img_final_corrected is None:
-        print(f"❌ Gagal melakukan koreksi kemiringan halus pada {image_file_path}. Menampilkan gambar setelah OSD (jika ada).")
-        img_final_corrected = img_after_osd.copy()
-
-    print(f"    Sudut Kemiringan Halus Terdeteksi (koreksi): {fine_skew_angle:.2f}°")
-    print(f"    Arah Kemiringan Halus Asli: {fine_skew_direction_msg}")
-
-    # 3. Pengenalan Teks (OCR) dari Gambar yang Sudah Dikoreksi Sepenuhnya
-    print("  Tahap 3: Pengenalan Teks (OCR)...")
-    recognized_text = ""
-    img_for_ocr = img_final_corrected.copy() # Mulai dengan gambar yang sudah dikoreksi
-
-    if apply_ocr_preprocessing_thresholding:
-        print("    Menerapkan thresholding tambahan sebelum OCR...")
-        # Konversi ke grayscale jika belum
-        if len(img_for_ocr.shape) == 3: # Jika berwarna
-            ocr_gray = cv2.cvtColor(img_for_ocr, cv2.COLOR_BGR2GRAY)
-        else: # Jika sudah grayscale
-            ocr_gray = img_for_ocr
-
-        # Terapkan thresholding
-        # Untuk THRESH_OTSU, nilai threshold (parameter kedua) tidak digunakan (bisa diisi 0)
-        _, ocr_thresholded = cv2.threshold(ocr_gray, 0, 255, ocr_threshold_type)
-        img_for_ocr = ocr_thresholded # Gambar untuk OCR sekarang adalah hasil threshold
-        
-        # Opsional: tampilkan gambar hasil thresholding untuk OCR
-        # cv2.imshow("Gambar Thresholded untuk OCR", img_for_ocr)
-
-    try:
-        # Jika tidak menerapkan thresholding di atas, Tesseract akan menggunakan
-        # gambar berwarna (img_final_corrected) atau grayscale (jika sudah dikonversi sebelumnya)
-        # Pytesseract dapat menangani gambar BGR, RGB, atau Grayscale (NumPy array).
-        # Konversi ke RGB adalah praktik umum jika inputnya BGR, tapi jika sudah di-threshold jadi biner/grayscale, itu tidak perlu.
-        if not apply_ocr_preprocessing_thresholding and len(img_for_ocr.shape) == 3: # Jika berwarna dan tidak di-threshold
-             img_to_pass_to_tesseract = cv2.cvtColor(img_for_ocr, cv2.COLOR_BGR2RGB)
-        else: # Jika sudah grayscale/biner dari thresholding, atau sudah grayscale
-             img_to_pass_to_tesseract = img_for_ocr
-
-        recognized_text = pytesseract.image_to_string(img_to_pass_to_tesseract, lang=ocr_language)
-        print(f"    Teks yang Dikenali ({ocr_language}):")
-        print("    ------------------------------------")
-        print(recognized_text if recognized_text.strip() else "    (Tidak ada teks yang dikenali atau teks kosong)")
-        print("    ------------------------------------")
-    except Exception as e:
-        print(f"❌ Error saat melakukan OCR: {e}")
-        if "TesseractNotFoundError" in str(e):
-             print("   Pastikan Tesseract terinstal dan path-nya sudah benar.")
-        elif "Failed loading language" in str(e):
-             print(f"   Pastikan language pack untuk '{ocr_language}' sudah terinstal di Tesseract.")
-
-    # Tampilkan gambar
-    try:
-        cv2.imshow(f"Asli: {os.path.basename(image_file_path)}", original_img)
-        if osd_correction_angle != 0 :
-            cv2.imshow(f"Setelah OSD ({osd_correction_angle}°): {os.path.basename(image_file_path)}", img_after_osd)
-        # Tampilkan juga gambar yang di-threshold untuk OCR jika diterapkan
-        if apply_ocr_preprocessing_thresholding:
-            cv2.imshow(f"Thresholded untuk OCR: {os.path.basename(image_file_path)}", img_for_ocr) # img_for_ocr adalah hasil threshold di sini
-        
-        cv2.imshow(f"Final Dikoreksi (Sebelum OCR): {os.path.basename(image_file_path)}", img_final_corrected)
+                if apply_ocr_preprocessing_thresholding:
+                    print("    Menerapkan thresholding tambahan sebelum OCR...")
+                    if len(img_for_ocr.shape) == 3: # Jika berwarna
+                        ocr_gray = cv2.cvtColor(img_for_ocr, cv2.COLOR_BGR2GRAY)
+                    else: # Jika sudah grayscale
+                        ocr_gray = img_for_ocr
+                    
+                    # Terapkan thresholding
+                    _, ocr_thresholded = cv2.threshold(ocr_gray, 0, 255, ocr_threshold_type)
+                    img_for_ocr = ocr_thresholded # Gambar untuk OCR sekarang adalah hasil threshold
+                    cv2.imshow(f"Thresholded untuk OCR {i+1}", img_for_ocr)
 
 
-        print(f"\n  Menampilkan gambar untuk: {os.path.basename(image_file_path)}. Tekan tombol apa saja di jendela gambar untuk menutup...")
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
-    except Exception as e:
-        print(f"  ⚠️ Tidak bisa menampilkan gambar: {e}. Pastikan Anda memiliki GUI environment.")
+                try:
+                    custom_config = r'--oem 3 --psm 6' 
+                    dikenali_teks = pytesseract.image_to_string(img_for_ocr, lang=ocr_language, config=custom_config)
+                    
+                    print(f"\n  Teks yang Dikenali dari Citra {i+1}:")
+                    print("  ------------------------------------")
+                    print(dikenali_teks if dikenali_teks.strip() else "  (Tidak ada teks yang dikenali atau teks kosong)")
+                    print("  ------------------------------------")
 
-    # # Simpan gambar yang sudah dikoreksi
-    # try:
-    #     base_name = os.path.basename(image_file_path)
-    #     name, ext = os.path.splitext(base_name)
-    #     output_filename = f"corrected_ocr_thresholded_{name}{ext}" if apply_ocr_preprocessing_thresholding else f"corrected_ocr_{name}{ext}"
-    #     cv2.imwrite(output_filename, img_final_corrected) # Simpan gambar hasil koreksi skew, bukan yang di-threshold untuk OCR
-    #     print(f"  ✅ Gambar yang dikoreksi (sebelum OCR thresholding) disimpan sebagai: {output_filename}")
-    #     if apply_ocr_preprocessing_thresholding:
-    #         output_filename_ocr_prep = f"ocr_input_thresholded_{name}{ext}"
-    #         cv2.imwrite(output_filename_ocr_prep, img_for_ocr) # img_for_ocr adalah hasil thresholding
-    #         print(f"  ✅ Gambar yang di-threshold untuk OCR disimpan sebagai: {output_filename_ocr_prep}")
+                except pytesseract.TesseractNotFoundError:
+                    print("❌ Error Tesseract: Path ke tesseract.exe tidak ditemukan atau salah.")
+                    print("   Pastikan Tesseract OCR terinstal dan path sudah dikonfigurasi dengan benar.")
+                except Exception as e_ocr:
+                    print(f"❌ Error saat melakukan OCR pada citra {i+1}: {e_ocr}")
+                    if "Failed loading language" in str(e_ocr):
+                        print(f"   Pastikan language pack untuk '{ocr_language}' sudah terinstal di Tesseract.")
 
-    # except Exception as e:
-    #     print(f"  ❌ Gagal menyimpan {output_filename}: {e}")
+            else:
+                print(f"Tidak dapat melakukan koreksi untuk citra {path_input}")
+            print("-" * 30)
 
-    print("\n--- Pemrosesan Selesai ---")
-    # (Bagian ringkasan tetap sama)
-    print(f"File: {image_file_path}")
-    print(f"  OSD: Rotasi {res['osd_angle']}° ({res['osd_direction']})") # Seharusnya res tidak ada di sini, pakai variabel langsung
-    print(f"  OSD: Rotasi {osd_correction_angle}° ({osd_direction_msg})")
-    print(f"  Skew Halus: Koreksi {fine_skew_angle:.2f}° ({fine_skew_direction_msg})")
-    if recognized_text.strip():
-        print(f"  Teks Dikenali: Ditampilkan di atas.")
-    else:
-        print(f"  Teks Dikenali: Tidak ada teks yang signifikan terdeteksi.")
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
