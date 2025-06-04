@@ -10,8 +10,6 @@ tesseract_path_default = r"C:\Program Files\Tesseract-OCR\tesseract.exe" # Sesua
 try:
     pytesseract.pytesseract.tesseract_cmd = os.environ.get('TESSERACT_CMD', tesseract_path_default)
     pytesseract.get_tesseract_version()
-    print(f"✅ Tesseract OCR ditemukan di: {pytesseract.pytesseract.tesseract_cmd}")
-    print(f"   Versi Tesseract: {pytesseract.get_tesseract_version()}")
 except Exception as e:
     print(f"⚠️ Peringatan Tesseract: {e}")
     if not os.path.exists(pytesseract.pytesseract.tesseract_cmd):
@@ -85,9 +83,9 @@ def koreksi_kemiringan(path_citra):
     # 5. Identifikasi arah kemiringan
     arah_kemiringan = "Tidak ada"
     if sudut_kemiringan > 0.5: # Tambahkan sedikit toleransi
-        arah_kemiringan = "Berlawanan Arah Jarum Jam (Rotasi ke Kanan)"
+        arah_kemiringan = "Berlawanan Arah Jarum Jam (Rotasi ke kiri)"
     elif sudut_kemiringan < -0.5: # Tambahkan sedikit toleransi
-        arah_kemiringan = "Searah Jarum Jam (Rotasi ke Kiri)"
+        arah_kemiringan = "Searah Jarum Jam (Rotasi ke kanan)"
     else:
         arah_kemiringan = "Tegak Lurus / Kemiringan Sangat Kecil"
 
@@ -124,7 +122,7 @@ def koreksi_kemiringan(path_citra):
 if __name__ == "__main__":
     # Ganti dengan path ke citra-citra input kalian
     daftar_citra_input = [
-        "Dataset\coba7.png"
+        "Dataset\coba9.png",
     ]
 
     ocr_language = 'eng+ind' # Bahasa Inggris dan Indonesia
@@ -137,9 +135,9 @@ if __name__ == "__main__":
         citra_asli, citra_terkoreksi, sudut, arah = koreksi_kemiringan(path_input)
 
         if citra_asli is not None:
-            cv2.imshow(f"Citra Asli {i+1}", citra_asli)
+            cv2.imshow(f"Citra Asli {i+1} ||  Sudut Kemiringan: {sudut:.2f}", citra_asli)
             if citra_terkoreksi is not None:
-                cv2.imshow(f"Citra Terkoreksi {i+1} (Sudut: {sudut:.2f}, Arah: {arah})", citra_terkoreksi)
+                cv2.imshow(f"Citra Terkoreksi {i+1} ||  Arah Koreksi: {arah})", citra_terkoreksi)
                 # Simpan hasil (opsional)
                 # nama_file_output = f"hasil_koreksi_{i+1}.png"
                 # cv2.imwrite(nama_file_output, citra_terkoreksi)
