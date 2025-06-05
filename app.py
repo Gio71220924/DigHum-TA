@@ -15,9 +15,7 @@ st.title("📄 Koreksi Kemiringan Gambar menggunakan Hough Line dan OCR dengan T
 st.markdown("Unggah gambar berisi teks miring untuk dikoreksi dan dibaca.")
 
 uploaded_file = st.file_uploader("📤 Upload Gambar disini!", type=["png", "jpg", "jpeg"])
-st.write("")
-st.write("")
-
+st.divider()
 if uploaded_file is not None:
     # Baca citra sebagai numpy array
     image = Image.open(uploaded_file).convert("RGB")
