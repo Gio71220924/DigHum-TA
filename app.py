@@ -36,9 +36,9 @@ if uploaded_file is not None:
             st.warning("❌ Tidak ada kemiringan yang perlu dikoreksi.")
 
     # OCR
-    if terkoreksi is not None:
-        st.subheader("📖 Hasil OCR (Tesseract)")
-        ocr_img = cv2.cvtColor(terkoreksi, cv2.COLOR_BGR2GRAY)
-        _, ocr_img = cv2.threshold(ocr_img, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-        text = pytesseract.image_to_string(ocr_img, lang='eng+ind', config='--oem 3 --psm 6')
-        st.code(text if text.strip() else "(Teks tidak terdeteksi)")
+    # if terkoreksi is not None:
+    #     st.subheader("📖 Hasil OCR (Tesseract)")
+    #     ocr_img = cv2.cvtColor(terkoreksi, cv2.COLOR_BGR2GRAY)
+    #     _, ocr_img = cv2.threshold(ocr_img, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    #     text = pytesseract.image_to_string(ocr_img, lang='eng+ind', config='--oem 3 --psm 6')
+    #     st.code(text if text.strip() else "(Teks tidak terdeteksi)")
