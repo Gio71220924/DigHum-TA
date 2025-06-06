@@ -36,6 +36,25 @@ if uploaded_files:
         with col2:
             if terkoreksi is not None:
                 st.image(terkoreksi, caption=f"Terkoreksi || Arah: {arah}", channels="BGR", use_container_width=True)
+                # Konversi citra BGR ke RGB untuk disimpan
+                terkoreksi_rgb = cv2.cvtColor(terkoreksi, cv2.COLOR_BGR2RGB)
+                img_pil = Image.fromarray(terkoreksi_rgb)
+
+                # Simpan ke buffer
+                from io import BytesIO
+                img_buffer = BytesIO()
+                img_pil.save(img_buffer, format="PNG")
+                img_buffer.seek(0)
+
+                # Tombol download gambar terkoreksi
+                download_name = f"terkoreksi_{uploaded_file.name.rsplit('.', 1)[0]}.png"
+                st.download_button(
+                    label="⬇️ Download Citra Terkoreksi",
+                    data=img_buffer,
+                    file_name=download_name,
+                    mime="image/png",
+                    use_container_width=True
+                )
             else:
                 st.warning("❌ Tidak ada kemiringan signifikan yang perlu dikoreksi.")
 
