@@ -14,6 +14,10 @@ def koreksi_kemiringan(citra):
     citra_asli = citra.copy()
     #GrayScale Citra
     gray = cv2.cvtColor(citra, cv2.COLOR_BGR2GRAY)
+
+    # Kurangi noise dengan Gaussian Blur
+    blurred = cv2.GaussianBlur(gray, (5, 9), 2)
+
     #Batas atas dan Batas Bawah untuk menghitung tepi
     edges = cv2.Canny(gray, 50, 150, apertureSize=3)
     #Garis Hough
