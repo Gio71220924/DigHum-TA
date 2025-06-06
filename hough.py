@@ -31,7 +31,7 @@ def koreksi_kemiringan(citra):
     visual_hough = citra.copy()
     for line in lines:
         x1, y1, x2, y2 = line[0]
-        cv2.line(visual_hough, (x1, y1), (x2, y2), (255, 0, 0), 2)
+        cv2.line(visual_hough, (x1, y1), (x2, y2), (255, 0, 0), 1)
         angle = math.atan2(y2 - y1, x2 - x1) * 180.0 / np.pi
         angles.append(angle)
 
