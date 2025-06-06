@@ -12,6 +12,7 @@ def koreksi_kemiringan(citra):
         tuple: (citra_asli, citra_terkoreksi, sudut_kemiringan, arah_kemiringan)
     """
     citra_asli = citra.copy()
+    visual_hough = citra.copy()
     #GrayScale Citra
     gray = cv2.cvtColor(citra, cv2.COLOR_BGR2GRAY)
 
@@ -24,17 +25,19 @@ def koreksi_kemiringan(citra):
     lines = cv2.HoughLinesP(edges, 1, np.pi / 180, threshold=80, minLineLength=50, maxLineGap=10)
 
     if lines is None:
-        return citra_asli, None, 0, "Tidak terdeteksi"
+        return citra_asli, None, 0, "Tidak terdeteksi", citra_dengan_garis
     #Hitung sudut kemiringan
     angles = []
+    visual_hough = citra.copy()
     for line in lines:
         x1, y1, x2, y2 = line[0]
+        cv2.line(visual_hough, (x1, y1), (x2, y2), (0, 255, 0), 2)
         angle = math.atan2(y2 - y1, x2 - x1) * 180.0 / np.pi
         angles.append(angle)
 
     filtered_angles = [a for a in angles if -45 < a < 45 and a != 0]
     if not filtered_angles:
-        return citra_asli, citra_asli, 0, "Tidak signifikan"
+        return citra_asli, citra_asli, 0, "Tidak signifikan", citra_dengan_garis
 
     sudut_kemiringan = np.median(filtered_angles)
     arah = "Tegak Lurus / Kecil"
@@ -60,4 +63,4 @@ def koreksi_kemiringan(citra):
 
     # Koreksi citra dengan rotasi
     citra_terkoreksi = cv2.warpAffine(citra, M, (new_w, new_h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
-    return citra_asli, citra_terkoreksi, sudut_kemiringan, arah
+    return citra_asli, citra_terkoreksi, sudut_kemiringan, arah, visual_hough

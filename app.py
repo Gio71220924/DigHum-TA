@@ -27,10 +27,10 @@ if uploaded_files:
         img_np = np.array(image)[:, :, ::-1]  # Convert PIL RGB ke BGR (OpenCV)
 
         # Koreksi kemiringan
-        asli, terkoreksi, sudut, arah = koreksi_kemiringan(img_np)
+        asli, terkoreksi, sudut, arah, visual_hough = koreksi_kemiringan(img_np)
 
         # Tampilkan gambar
-        col1, col2 = st.columns(2)
+        col1, col2, col3 = st.columns(3)
         with col1:
             st.image(asli, caption=f"Asli || Sudut: {sudut:.2f}°", channels="BGR", use_container_width=True)
         with col2:
@@ -57,6 +57,8 @@ if uploaded_files:
                 )
             else:
                 st.warning("❌ Tidak ada kemiringan signifikan yang perlu dikoreksi.")
+        with col3:
+            st.image(visual_hough, caption="Visualisasi Hough Transform", channels="BGR", use_container_width=True)
 
         # OCR jika berhasil dikoreksi
         # if terkoreksi is not None:
