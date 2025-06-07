@@ -25,7 +25,7 @@ def koreksi_kemiringan(citra):
     lines = cv2.HoughLinesP(edges, 1, np.pi / 180, threshold=80, minLineLength=50, maxLineGap=10)
 
     if lines is None:
-        return citra_asli, None, 0, "Tidak terdeteksi", citra_dengan_garis
+        return citra_asli, None, 0, "Tidak terdeteksi", visual_hough
     #Hitung sudut kemiringan
     angles = []
     visual_hough = citra.copy()
@@ -37,7 +37,7 @@ def koreksi_kemiringan(citra):
 
     filtered_angles = [a for a in angles if -45 < a < 45 and a != 0]
     if not filtered_angles:
-        return citra_asli, citra_asli, 0, "Tidak signifikan", citra_dengan_garis
+        return citra_asli, citra_asli, 0, "Tidak signifikan", visual_hough
 
     sudut_kemiringan = np.median(filtered_angles)
     arah = "Tegak Lurus / Kecil"

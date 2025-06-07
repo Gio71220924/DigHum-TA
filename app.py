@@ -35,10 +35,10 @@ if st.button("🚀 Jalankan Koreksi dan OCR"):
             # Tampilkan gambar
             col1, col2, col3 = st.columns(3)
             with col1:
-                st.image(asli, caption=f"Asli || Sudut: {sudut:.2f}°", channels="BGR", use_container_width=True)
+                st.image(asli, caption=f"Citra Asli || Sudut kemiringan: {sudut:.2f}°", channels="BGR", use_container_width=True)
             with col2:
                 if terkoreksi is not None:
-                    st.image(terkoreksi, caption=f"Terkoreksi || Arah: {arah}", channels="BGR", use_container_width=True)
+                    st.image(terkoreksi, caption=f"Citra Terkoreksi || Arah koreksi: {arah}", channels="BGR", use_container_width=True)
                     # Konversi citra BGR ke RGB untuk disimpan
                     terkoreksi_rgb = cv2.cvtColor(terkoreksi, cv2.COLOR_BGR2RGB)
                     img_pil = Image.fromarray(terkoreksi_rgb)
@@ -61,7 +61,7 @@ if st.button("🚀 Jalankan Koreksi dan OCR"):
                 else:
                     st.warning("❌ Tidak ada kemiringan signifikan yang perlu dikoreksi.")
             with col3:
-                st.image(visual_hough, caption="Visualisasi Hough Transform", channels="BGR", use_container_width=True)
+                st.image(visual_hough, caption="Visualisasi Garis Hough", channels="BGR", use_container_width=True)
 
         # OCR jika berhasil dikoreksi
         # if terkoreksi is not None:
