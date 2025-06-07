@@ -5,6 +5,7 @@ import pytesseract
 from hough import koreksi_kemiringan
 from PIL import Image
 from io import BytesIO
+pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
 st.markdown("""
 <h1 style='text-align: center;'>🧾 Deteksi dan Koreksi Kemiringan</h1>
