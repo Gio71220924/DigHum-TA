@@ -7,7 +7,7 @@ from PIL import Image
 from io import BytesIO
 
 # URL backend OCR yang sudah dideploy
-BACKEND_URL = "https://deploy-railway-production-1030.up.railway.app/ocr"
+BACKEND_URL = "https://deploy-railway-gio71220924s-projects.vercel.app/"
 
 def perform_ocr_via_backend(image_pil):
     # Konversi PIL Image ke bytes untuk di-upload ke backend
